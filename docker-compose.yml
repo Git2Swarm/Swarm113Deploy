@@ -1,0 +1,12 @@
+version: "2"
+
+services:
+    apigateway:
+        image: ${DOCKER_HUB_USER}/apigateway
+        build: apigateway
+        environment:
+            - RAILSAPP_URL=http://railsapp:3000
+            - FLASKAPP_URL=http://flaskapp:5000
+            - PYTHONAPP_URL=http://pythonapp:5000
+        ports:
+            - "7373:5000"
