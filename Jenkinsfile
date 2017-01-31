@@ -66,10 +66,10 @@ node ('swarm-deploy') {
       sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${ARTIFACTORY_URL}/${env.JOB_NAME}.dab -o ${env.JOB_NAME}.dab"
     }
     
-    stage ('Clear running services') {
+    // stage ('Clear running services') {
       // NOTE: this is a temporary workaround for port clashing 
-      sh "docker service  ls -q | (xargs docker service rm || echo )"
-    }
+      // sh "docker service  ls -q | (xargs docker service rm || echo )"
+    // }
     
     stage ('Deploy Docker App Bundle') {
       sh "docker stack deploy -c docker-compose.yml ${env.JOB_NAME}" // deploy create as well as update stack - ?Does note seem to be working?
