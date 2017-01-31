@@ -72,7 +72,7 @@ node ('swarm-deploy') {
     }
     
     stage ('Deploy Docker App Bundle') {
-      sh "docker stack deploy ${env.JOB_NAME}" // deploy create as well as update stack - ?Does note seem to be working?
+      sh "docker stack deploy -c docker-compose.yml ${env.JOB_NAME}" // deploy create as well as update stack - ?Does note seem to be working?
     }
     
     stage ('Configure Service updates for end users - External ports, volumes/networks, access control') {
