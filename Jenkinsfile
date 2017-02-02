@@ -48,10 +48,13 @@ node ('docker-build') {
     
     stage ('Merge Infrastructure and Application Bundle') {
       sh "docker run --rm -v `pwd`:/data mikeagileclouds/dabmerger --out /data/${env.JOB_NAME}.dab /data/${env.JOB_NAME}_infra.dab /data/${env.DEVPROJCOMPOSEDIR}/${env.JOB_NAME}_app.dab"
+      sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml /data/docker-compose.yml /data/${env.DEVPROJCOMPOSEDIR}/docker-compose.yml"
+ 
     }
  
     stage ('Upload Application Bundle') {
       sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${ARTIFACTORY_URL}/${env.JOB_NAME}.dab -T ${env.JOB_NAME}.dab"
+      sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
     }
 }
     
@@ -64,6 +67,7 @@ node ('swarm-deploy') {
 
     stage ('Download Application Bundle') {
       sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${ARTIFACTORY_URL}/${env.JOB_NAME}.dab -o ${env.JOB_NAME}.dab"
+      sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${ARTIFACTORY_URL}/${env.JOB_NAME}.yml -o ${env.JOB_NAME}.yml"
     }
     
     // stage ('Clear running services') {
@@ -72,15 +76,16 @@ node ('swarm-deploy') {
     // }
     
     stage ('Deploy Docker App Bundle') {
-      sh "docker stack deploy -c docker-compose.yml ${env.JOB_NAME}" // deploy create as well as update stack - ?Does note seem to be working?
+      sh "docker stack deploy -c ${env.JOB_NAME}.yml ${env.JOB_NAME}" // deploy create as well as update stack - ?Does note seem to be working?
     }
     
-    stage ('Configure Service updates for end users - External ports, volumes/networks, access control') {
-      sh "sh scripts/polyglot-deploy.sh ${env.JOB_NAME}"
-    }
+    // stage ('Configure Service updates for end users - External ports, volumes/networks, access control') {
+    //  sh "sh scripts/polyglot-deploy.sh ${env.JOB_NAME}"
+   //  }
         
     stage ('Publish Swarm Node and Service details') {
       sh "docker node ls"
+      sh "docker stack ls"
       sh "docker service ls"
     }
 }
