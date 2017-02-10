@@ -17,7 +17,7 @@ node ('docker-build') {
     // Extract the compose file with path
     def composePath = items[1]
     
-    mergeArg = "$mergeArg /data/$composePath"
+    mergeArg = "$mergeArg /data/$projectName/$composePath"
     stage ("Project $projectName") {
       dir ("$projectName") {
         git url: "$gitUrl"
