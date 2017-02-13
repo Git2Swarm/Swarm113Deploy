@@ -2,6 +2,7 @@ node ('docker-build') {
   
   stage ('Initialze Build') {
     checkout scm
+    sh "docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_HUB_PASSWORD}"
   }
   mergeArg = ""
   composeInput = "${env.DEVPROJROOTURL}"
@@ -23,9 +24,8 @@ node ('docker-build') {
         git url: "$gitUrl"
         sh "git submodule update --init"
         sh "git submodule update --force"
-        sh "docker-compose build --pull"
-        sh "docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_HUB_PASSWORD}"
-        sh "docker-compose push"
+        sh "docker-compose build --pull -f $composePath"
+        sh "docker-compose push -f $composePath"
       }
     }  
   }    
@@ -41,7 +41,7 @@ node ('swarm-deploy') {
     checkout scm
   }
 
-  stage ('Download Stacl Compose') {
+  stage ('Download Stack Compose') {
     sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${ARTIFACTORY_URL}/${env.JOB_NAME}.yml -o ${env.JOB_NAME}.yml"
   }
     
