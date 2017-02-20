@@ -32,7 +32,7 @@ node ('docker-build') {
   
   stage ("Merge Compose files") {
     sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml ${mergeArg}"
-    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
+    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
   }
 }
 
@@ -42,7 +42,7 @@ node ('swarm-deploy') {
   }
 
   stage ('Download Stack Compose') {
-    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${ARTIFACTORY_URL}/${env.JOB_NAME}.yml -o ${env.JOB_NAME}.yml"
+    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD}  ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -o ${env.JOB_NAME}.yml"
   }
     
   stage ('Deploy Docker App Bundle') {
