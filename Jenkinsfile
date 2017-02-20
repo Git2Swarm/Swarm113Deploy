@@ -5,7 +5,7 @@ node ('docker-build') {
     sh "docker login -u ${env.DOCKER_HUB_USER} -p ${env.DOCKER_HUB_PASSWORD}"
   }
   mergeArg = ""
-  composeInput = "${env.DEVPROJROOTURL}"
+  composeInput = "${env.APPS_COMPOSE}"
   composeList = composeInput.tokenize(';')
   
   for ( url in composeList ) {
