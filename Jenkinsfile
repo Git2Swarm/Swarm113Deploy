@@ -24,8 +24,8 @@ node ('docker-build') {
         git url: "$gitUrl"
         sh "git submodule update --init"
         sh "git submodule update --force"
-        sh "docker-compose build --pull -f $composePath"
-        sh "docker-compose push -f $composePath"
+        sh "docker-compose -f $composePath build --pull "
+        sh "docker-compose -f $composePath push"
       }
     }  
   }    
