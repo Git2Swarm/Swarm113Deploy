@@ -30,8 +30,45 @@ node ('docker-build') {
     }  
   }    
   
-  stage ("Merge Compose files") {
-    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml ${mergeArg}"
+  stage ("Merge Apps Compose files") {
+    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}-apps.yml ${mergeArg}"
+    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}-apps.yml -T ${env.JOB_NAME}-apps.yml"
+  }
+
+
+  mergeArg = ""
+  composeInput = "${env.OPS_COMPOSE}"
+  composeList = composeInput.tokenize(';')
+  
+  for ( url in composeList ) {
+    items = url.split("/blob/master/")
+    
+    // Extract the git URL and project name
+    def gitUrl = "${items[0]}.git"
+    def projectName = items[0].tokenize('/')[3]
+      
+    // Extract the compose file with path
+    def composePath = items[1]
+    
+    mergeArg = "$mergeArg /data/$projectName/$composePath"
+    stage ("Project $projectName") {
+      dir ("$projectName") {
+        git url: "$gitUrl"
+        sh "git submodule update --init"
+        sh "git submodule update --force"
+        sh "docker-compose -f $composePath build --pull "
+        sh "docker-compose -f $composePath push"
+      }
+    }  
+  }    
+  
+  stage ("Merge Ops Compose files") {
+    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}-ops.yml ${mergeArg}"
+    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}-ops.yml -T ${env.JOB_NAME}-ops.yml"
+  }
+
+  stage ("Merge Apps & Ops Compose files") {
+    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml /data/${env.JOB_NAME}-apps.yml /data/${env.JOB_NAME}-ops.yml"
     sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
   }
 }
@@ -53,5 +90,6 @@ node ('swarm-deploy') {
     sh "docker node ls"
     sh "docker stack ls"
     sh "docker service ls"
+    sh "echo IP: `curl -s http://169.254.169.254/latest/meta-data/public-ipv4`"
   }
 }
