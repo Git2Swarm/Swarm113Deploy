@@ -62,15 +62,24 @@ node ('docker-build') {
     }  
   }    
   
-  stage ("Merge Ops Compose files") {
-    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}-ops.yml ${mergeArg}"
-    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}-ops.yml -T ${env.JOB_NAME}-ops.yml"
+  if ( mergeArg.length() ) { /* merge only if there is any ops compose file */
+    stage ("Merge Ops Compose files") {
+      sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}-ops.yml ${mergeArg}"
+      sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}-ops.yml -T ${env.JOB_NAME}-ops.yml"
+    }
+
+    stage ("Merge Apps & Ops Compose files") {
+      sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml /data/${env.JOB_NAME}-apps.yml /data/${env.JOB_NAME}-ops.yml"
+    }
+    stage ("Upload Stack Compose files") {
+      sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
+    }
+  } else {
+    stage ("Upload Stack Compose files") {
+      sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}-apps.yml"
+    }
   }
 
-  stage ("Merge Apps & Ops Compose files") {
-    sh "docker run --rm -v `pwd`:/data mikeagileclouds/composemerger --output /data/${env.JOB_NAME}.yml /data/${env.JOB_NAME}-apps.yml /data/${env.JOB_NAME}-ops.yml"
-    sh "curl -k -u ${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASSWORD} -X PUT ${env.ARTIFACTORY_URL}/${env.JOB_NAME}.yml -T ${env.JOB_NAME}.yml"
-  }
 }
 
 node ('swarm-deploy') {
